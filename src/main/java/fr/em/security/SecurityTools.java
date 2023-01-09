@@ -16,8 +16,8 @@ import java.util.Base64;
 public class SecurityTools {
     public static String getToken(UtilisateurEntity user) {
         return Jwt.issuer("https://example.com/issuer")
-                .expiresIn(Duration.ofMinutes(20))
-                .upn(user.getEmail())
+                .expiresIn(Duration.ofMinutes(120))
+                .upn(user.getLogin())
                 .groups(user.getRole())
                 .sign();
     }

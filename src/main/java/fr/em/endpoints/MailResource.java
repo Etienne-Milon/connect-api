@@ -14,5 +14,5 @@ public interface MailResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public Response sendMail(MailDto mail, @HeaderParam("ApiKey") String apiKey);
+    Response sendMail(MailDto mail, @HeaderParam("ApiKey") String apiKey);
 }
