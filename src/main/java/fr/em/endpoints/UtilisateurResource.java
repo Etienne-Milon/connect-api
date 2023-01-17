@@ -1,6 +1,7 @@
 package fr.em.endpoints;
 
 import fr.em.Entities.UtilisateurEntity;
+import fr.em.dto.CreateUserDto;
 import fr.em.dto.UtilisateurDto;
 import fr.em.dto.MailDto;
 import fr.em.repositories.UtilisateurRepository;
@@ -57,7 +58,7 @@ public class UtilisateurResource {
         if (utilisateur == null) {
             return Response.ok("login inconnu").status(404).build();
         }
-        if (BcryptUtil.matches(password, utilisateur.getPasswordhash())) {
+        if (BcryptUtil.matches(password, utilisateur.getPassword())) {
             String token = SecurityTools.getToken(utilisateur);
             return Response.ok(token).build();
         }
@@ -68,25 +69,27 @@ public class UtilisateurResource {
     @PermitAll
     @POST
     @Path("/creerUtilisateur")
-    public Response insert(UtilisateurDto utilisateur) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
+    public Response insert(CreateUserDto utilisateur) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         UriBuilder uriBuilder = uriInfo.getBaseUriBuilder();
-        if (utilisateurRepository.findById(utilisateur.getEmail()) != null)
-            return Response.status(417, "Cette adresse existe déjà").build();
+//        if (utilisateurRepository.findById(utilisateur.getEmail()) != null)
+//            return Response.status(417, "Cette adresse existe déjà").build();
+//        if (utilisateurRepository.findById(utilisateur.getLogin()) != null)
+//            return Response.status(417, "Ce login existe déjà").build();
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.MINUTE, 120);
         Date expiration = calendar.getTime();
-        String url = String.format("%s|%s|%s|%s|%s",
+        String url = String.format("%s|%s|%s|%s|%s|%s",
                 utilisateur.getLogin(),
                 utilisateur.getEmail(),
                 BcryptUtil.bcryptHash(utilisateur.getPassword()),
-                "user",
+                utilisateur.getNom(),
+                utilisateur.getPrenom(),
                 new SimpleDateFormat("dd-MM-yy-HH:mm:ss").format(expiration));
         String urlEncode = SecurityTools.encrypt(url);
         uriBuilder.path("/user/confirm/" + URI.create(urlEncode));
-        StringBuilder body = new StringBuilder("Veillez cliquer sur le lien suivant pour confirmer la création de votre utilisateur : ");
+        StringBuilder body = new StringBuilder("Veuillez cliquer sur le lien suivant pour confirmer la création de votre utilisateur : ");
         body.append(uriBuilder.build());
         MailDto mailDto = new MailDto(utilisateur.getEmail(), "Confirmation de votre inscription", body.toString());
-
         mailResource.sendMail(mailDto, "ItsOKForYou");
         return Response.ok().status(200).build();
     }
@@ -96,17 +99,18 @@ public class UtilisateurResource {
     @Path("/confirm/{code}")
     public Response confirmCreate(@PathParam("code") String code) throws NoSuchPaddingException, IllegalBlockSizeException, NoSuchAlgorithmException, BadPaddingException, InvalidKeyException {
         String[] params = SecurityTools.decrypt(code).split("\\|");
+        System.out.println(params[2] + " " + params[3]+ " " + params[4]);
         UtilisateurEntity user = new UtilisateurEntity();
         user.setLogin(params[0]);
         user.setEmail(params[1]);
-        user.setPasswordhash(params[2]);
-        user.setRole(params[3]);
-        user.setNom("");
-        user.setPrenom("");
+        user.setPassword(params[2]);
+        user.setNom(params[3]);
+        user.setPrenom(params[4]);
+        user.setRole("user");
         user.setDateDebutAdhesion(java.sql.Date.valueOf(LocalDate.now()));
         user.setDateFinAdhesion(java.sql.Date.valueOf(LocalDate.now().plusYears(1)));
         try {
-            Date expireAt = new SimpleDateFormat("dd-MM-yy-HH:mm:ss").parse(params[4]);
+            Date expireAt = new SimpleDateFormat("dd-MM-yy-HH:mm:ss").parse(params[5]);
             if (expireAt.before(Calendar.getInstance().getTime()))
                 return Response.ok("Le lien n'est plus valide").status(400, "status 400").build();
         } catch (ParseException e) {
@@ -179,7 +183,6 @@ public class UtilisateurResource {
         UtilisateurEntity utilisateurEntity = utilisateurRepository.findById(login);
         if (utilisateurEntity != null) {
             UtilisateurDto utilisateurDto = new UtilisateurDto(utilisateurEntity);
-            System.out.println(jwt.getGroups().toString());
             if (jwt.getGroups().contains("admin")) {
                 String uri = uriInfo.getRequestUriBuilder().build().toString();
                 utilisateurDto.addLink("allUser", uri.replace(utilisateurDto.getLogin(), "allUsers"));

@@ -1,8 +1,0 @@
-version: '3.9'
-
-services:
-  db:
-    container_name: ptitnom
-    image: quentiinos/cuib
-  mail-service:
-

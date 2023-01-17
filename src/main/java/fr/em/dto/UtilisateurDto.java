@@ -27,9 +27,9 @@ public class UtilisateurDto extends HateOAS {
         this.email = user.getEmail();
         this.nom = user.getNom();
         this.prenom = user.getPrenom();
+        this.password = user.getPassword();
         this.role = user.getRole();
         this.debutAdhesion = user.getDateDebutAdhesion();
         this.finAdhesion = user.getDateFinAdhesion();
-        this.password = user.getPasswordhash();
     }
 }

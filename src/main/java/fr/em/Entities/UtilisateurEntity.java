@@ -24,7 +24,7 @@ public class UtilisateurEntity {
     private String email;
     @Basic
     @Column(name = "passwordhash")
-    private String passwordhash;
+    private String password;
     @Basic
     @Column(name = "date_debut_adhesion")
     private Date dateDebutAdhesion;
